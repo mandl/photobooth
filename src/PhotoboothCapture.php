@@ -113,7 +113,27 @@ class PhotoboothCapture
         $cmd .= ' 2>&1'; //Redirect stderr to stdout, otherwise error messages get lost.
 
         exec($cmd, $output, $returnValue);
+        $returnValue = 0;
 
+
+        //sleep(6);
+        $max_wait = 15; // 15 seconds
+
+        // 1. Extend PHP timeout to match our wait time
+        set_time_limit($max_wait + 5); 
+
+        $start = time();
+        while (!file_exists($this->tmpFile)) {
+            if ((time() - $start) > $max_wait) {
+                die("Timeout: File never arrived.");
+          }
+    
+          // 2. Critical for Apache/PHP environments
+          clearstatcache(); 
+    
+          // 3. Prevent high CPU usage on the server
+          usleep(500000); // Wait 0.5 seconds
+        }       
         if ($returnValue && ($this->debugLevel > 1 || $this->style === 'video')) {
             $data = [
                 'error' => 'Capture command returned an error code.',
